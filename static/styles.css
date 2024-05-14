@@ -1,0 +1,76 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+h1, h2 {
+    font-weight: bold;
+}
+
+h1 {
+    color: #ffffff;
+}
+
+h2 {
+    color: #ffffff;
+}
+
+.card-header.bg-primary {
+    background-color: #1e1e1e !important;
+}
+
+.card-header.bg-secondary {
+    background-color: #333333 !important;
+}
+
+.form-inline .form-group {
+    margin-right: 15px;
+}
+
+.list-group-item {
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    margin-bottom: 5px;
+    font-size: 1.1rem;
+}
+
+.spinner-border.text-neon {
+    border-color: #00ff00;
+    border-right-color: transparent;
+}
+
+.badge-primary {
+    background-color: #007bff;
+}
+
+.btn-primary, .btn-info, .btn-secondary {
+    font-size: 1rem;
+    padding: 10px 20px;
+}
+
+.btn-neon {
+    background-color: #ffffff;
+    border: none;
+    color: #121212;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-neon:hover {
+    background-color: #00cc00;
+    color: #ffffff;
+}
+
+.container {
+    max-width: 800px;
+}
+
+input.form-control {
+    width: 300px;
+    font-size: 1rem;
+    padding: 10px;
+    background-color: #1e1e1e;
+    border: 1px solid #333333;
+    color: #ffffff;
+}

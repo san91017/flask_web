@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NB-IoT Management</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-dark text-light">
+    <div class="container mt-5">
+        <div class="text-center mb-5">
+            <h1 class="text-neon display-4">NB-IoT Management</h1>
+        </div>
+
+        <div class="card mb-5 shadow-sm bg-dark text-light border-light">
+            <div class="card-header bg-secondary text-light">
+                <h2 class="mb-0 h4">Add Instrument Serial Number</h2>
+            </div>
+            <div class="card-body">
+                <form id="add-form" class="form-inline justify-content-center">
+                    <div class="form-group mr-3">
+                        <label for="topic" class="sr-only">Instrument Serial Number (Topic):</label>
+                        <input type="text" id="topic" name="topic" class="form-control form-control-lg bg-dark text-light border-light" placeholder="Enter Serial Number">
+                    </div>
+                    <button type="submit" class="btn btn-neon btn-lg">Add</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-5 shadow-sm bg-dark text-light border-light">
+            <div class="card-header bg-secondary text-light">
+                <h2 class="mb-0 h4">Topic List</h2>
+            </div>
+            <div class="card-body">
+                <ul id="topics-list" class="list-group list-group-flush">
+                    {% for topic, info in topics.items() %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-light border-light">
+                            <span>{{ topic }} - Last Update: {{ info.last_update }}</span>
+                            <button class="btn btn-neon btn-sm" onclick="showMessages('{{ topic }}')">Show Messages</button>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mb-5 shadow-sm bg-dark text-light border-light">
+            <div class="card-header bg-secondary text-light">
+                <h2 class="mb-0 h4">Publish Message</h2>
+            </div>
+            <div class="card-body">
+                <form id="publish-form" class="form-inline justify-content-center">
+                    <div class="form-group mr-3">
+                        <label for="pub-topic" class="sr-only">Topic:</label>
+                        <input type="text" id="pub-topic" name="topic" class="form-control form-control-lg bg-dark text-light border-light" placeholder="Enter Topic">
+                    </div>
+                    <div class="form-group mr-3">
+                        <label for="message" class="sr-only">Message:</label>
+                        <input type="text" id="message" name="message" class="form-control form-control-lg bg-dark text-light border-light" placeholder="Enter Message">
+                    </div>
+                    <button type="submit" class="btn btn-neon btn-lg">Publish</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-5 shadow-sm bg-dark text-light border-light">
+            <div class="card-header bg-secondary text-light">
+                <h2 class="mb-0 h4">Messages</h2>
+            </div>
+            <div class="card-body">
+                <div id="loading" class="text-center mb-4" style="display:none;">
+                    <div class="spinner-border text-neon" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+                <ul id="messages-list" class="list-group list-group-flush mb-4"></ul>
+                <div id="pagination" class="text-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        let currentPage = 1;
+        let currentTopic = '';
+
+        function showMessages(topic, page = 1) {
+            currentTopic = topic;
+            currentPage = page;
+            document.getElementById('loading').style.display = 'block';
+            fetch(`/messages/${topic}?page=${page}`)
+            .then(response => response.json())
+            .then(messages => {
+                document.getElementById('loading').style.display = 'none';
+                var messagesList = document.getElementById('messages-list');
+                messagesList.innerHTML = '';
+                messages.forEach(message => {
+                    var li = document.createElement('li');
+                    li.className = 'list-group-item bg-dark text-light border-light';
+                    li.textContent = `${message.timestamp}: ${message.message}`;
+                    messagesList.appendChild(li);
+                });
+                updatePagination();
+            });
+        }
+
+        function updatePagination() {
+            var pagination = document.getElementById('pagination');
+            pagination.innerHTML = `
+                <button class="btn btn-neon" onclick="showMessages('${currentTopic}', ${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                <button class="btn btn-neon" onclick="showMessages('${currentTopic}', ${currentPage + 1})">Next</button>
+            `;
+        }
+
+        document.getElementById('add-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var topic = document.getElementById('topic').value;
+            fetch('/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'topic=' + topic
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateTopicsList(data);
+            });
+        });
+
+        document.getElementById('publish-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var topic = document.getElementById('pub-topic').value;
+            var message = document.getElementById('message').value;
+            fetch('/publish', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'topic=' + topic + '&message=' + message
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Message published');
+                }
+            });
+        });
+
+        function updateTopicsList(data) {
+            var topicsList = document.getElementById('topics-list');
+            topicsList.innerHTML = '';
+            for (var topic in data) {
+                var li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center bg-dark text-light border-light';
+                var span = document.createElement('span');
+                span.textContent = topic + ' - Last Update: ' + data[topic]['last_update'];
+                li.appendChild(span);
+                var button = document.createElement('button');
+                button.className = 'btn btn-neon btn-sm';
+                button.textContent = 'Show Messages';
+                button.setAttribute('onclick', `showMessages('${topic}')`);
+                li.appendChild(button);
+                topicsList.appendChild(li);
+            }
+        }
+
+        // 定時更新頁面
+        setInterval(function() {
+            fetch('/')
+            .then(response => response.text())
+            .then(html => {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var newTopicsList = doc.getElementById('topics-list').innerHTML;
+                document.getElementById('topics-list').innerHTML = newTopicsList;
+            });
+        }, 600000); // 每 10 分鐘更新一次
+    </script>
+</body>
+</html>
